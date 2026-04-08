@@ -1,0 +1,6 @@
+{"timestamp":"2026-01-10 07:39:03.944160394","level":"INFO","fields":{"message":"Logger initialized","tid":"Startup"},"target":"iluvatar_library::logging"}
+{"timestamp":"2026-01-10 07:39:03.952443528","level":"INFO","fields":{"message":"Creating 'containerd' backend","tid":"Startup"},"target":"iluvatar_worker_library::services::containers"}
+{"timestamp":"2026-01-10 07:39:03.95312444","level":"INFO","fields":{"message":"Creating 'docker' backend","tid":"Startup"},"target":"iluvatar_worker_library::services::containers"}
+{"timestamp":"2026-01-10 07:39:03.953232716","level":"INFO","fields":{"message":"Cleaning containers in namespace","tid":"Startup","namespace":"default"},"target":"iluvatar_worker_library::services::containers::containerd"}
+{"timestamp":"2026-01-10 07:39:03.953584637","level":"INFO","fields":{"message":"Deleting all owned namespaces","tid":"Startup"},"target":"iluvatar_worker_library::services::network::namespace_manager"}
+{"timestamp":"2026-01-10 07:39:03.961388684","level":"ERROR","fields":{"message":"ContainerdIsolation background receive channel broken!","error":"receiving on a closed channel"},"target":"iluvatar_worker_library::services::containers::containerd"}

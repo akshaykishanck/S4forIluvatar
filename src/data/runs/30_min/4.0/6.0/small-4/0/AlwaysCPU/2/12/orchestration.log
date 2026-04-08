@@ -1,0 +1,179 @@
+
+PLAY [workers] *****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Platform linux on host worker1 is using the discovered Python
+interpreter at /usr/bin/python3.10, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.18/reference_appendices/interpreter_discovery.html for more information.
+ok: [worker1]
+
+TASK [Create bin directory] ****************************************************
+ok: [worker1]
+
+TASK [copy worker executable] **************************************************
+ok: [worker1]
+
+TASK [copy worker config] ******************************************************
+ok: [worker1]
+
+TASK [Get running worker process] **********************************************
+changed: [worker1]
+
+TASK [Kill running worker process on localhost] ********************************
+skipping: [worker1]
+
+TASK [Kill running worker process distrib] *************************************
+skipping: [worker1]
+
+TASK [clean localhost] *********************************************************
+skipping: [worker1]
+
+TASK [clean distrib host] ******************************************************
+changed: [worker1]
+
+TASK [run worker executable] ***************************************************
+skipping: [worker1]
+
+TASK [debug print] *************************************************************
+ok: [worker1] => {
+    "msg": {
+        "changed": false,
+        "false_condition": "mode == \"deploy\"",
+        "skip_reason": "Conditional result was False",
+        "skipped": true
+    }
+}
+
+TASK [run worker executable through perf] **************************************
+skipping: [worker1]
+
+TASK [wait until the worker on this host is up and running] ********************
+skipping: [worker1]
+
+PLAY RECAP *********************************************************************
+worker1                    : ok=7    changed=2    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+
+
+PLAY [workers] *****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Platform linux on host worker1 is using the discovered Python
+interpreter at /usr/bin/python3.10, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.18/reference_appendices/interpreter_discovery.html for more information.
+ok: [worker1]
+
+TASK [Create bin directory] ****************************************************
+ok: [worker1]
+
+TASK [copy worker executable] **************************************************
+ok: [worker1]
+
+TASK [copy worker config] ******************************************************
+ok: [worker1]
+
+TASK [Get running worker process] **********************************************
+skipping: [worker1]
+
+TASK [Kill running worker process on localhost] ********************************
+skipping: [worker1]
+
+TASK [Kill running worker process distrib] *************************************
+skipping: [worker1]
+
+TASK [clean localhost] *********************************************************
+skipping: [worker1]
+
+TASK [clean distrib host] ******************************************************
+skipping: [worker1]
+
+TASK [run worker executable] ***************************************************
+changed: [worker1]
+
+TASK [debug print] *************************************************************
+ok: [worker1] => {
+    "msg": {
+        "ansible_job_id": "j698950892592.478145",
+        "changed": true,
+        "failed": 0,
+        "finished": 0,
+        "results_file": "/root/.ansible_async/j698950892592.478145",
+        "started": 1
+    }
+}
+
+TASK [run worker executable through perf] **************************************
+skipping: [worker1]
+
+TASK [wait until the worker on this host is up and running] ********************
+FAILED - RETRYING: [worker1]: wait until the worker on this host is up and running (5 retries left).
+FAILED - RETRYING: [worker1]: wait until the worker on this host is up and running (4 retries left).
+FAILED - RETRYING: [worker1]: wait until the worker on this host is up and running (3 retries left).
+FAILED - RETRYING: [worker1]: wait until the worker on this host is up and running (2 retries left).
+ok: [worker1]
+
+PLAY RECAP *********************************************************************
+worker1                    : ok=7    changed=1    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+
+Logging to /extra/sid/Run_Scripts/Results/Jan_Run_2/30_min/4.0/6.0/small-4/0/AlwaysCPU/2/12/load_gen.log
+
+PLAY [workers] *****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+[WARNING]: Platform linux on host worker1 is using the discovered Python
+interpreter at /usr/bin/python3.10, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.18/reference_appendices/interpreter_discovery.html for more information.
+ok: [worker1]
+
+TASK [Create bin directory] ****************************************************
+ok: [worker1]
+
+TASK [copy worker executable] **************************************************
+ok: [worker1]
+
+TASK [copy worker config] ******************************************************
+ok: [worker1]
+
+TASK [Get running worker process] **********************************************
+changed: [worker1]
+
+TASK [Kill running worker process on localhost] ********************************
+skipping: [worker1] => (item=478155) 
+skipping: [worker1]
+
+TASK [Kill running worker process distrib] *************************************
+changed: [worker1] => (item=478155)
+
+TASK [clean localhost] *********************************************************
+skipping: [worker1]
+
+TASK [clean distrib host] ******************************************************
+changed: [worker1]
+
+TASK [run worker executable] ***************************************************
+skipping: [worker1]
+
+TASK [debug print] *************************************************************
+ok: [worker1] => {
+    "msg": {
+        "changed": false,
+        "false_condition": "mode == \"deploy\"",
+        "skip_reason": "Conditional result was False",
+        "skipped": true
+    }
+}
+
+TASK [run worker executable through perf] **************************************
+skipping: [worker1]
+
+TASK [wait until the worker on this host is up and running] ********************
+skipping: [worker1]
+
+PLAY RECAP *********************************************************************
+worker1                    : ok=8    changed=3    unreachable=0    failed=0    skipped=5    rescued=0    ignored=0   
+
