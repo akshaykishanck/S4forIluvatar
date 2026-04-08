@@ -54,6 +54,14 @@ The `evaluate_current_estimate.py` script computes per-session MAE, MSE, and Per
 
 **Key finding:** The highest estimation errors were reported for `pyhpc-eos`, `pyhpc-isoneural`, and `torch_rnn` functions (mean actual latency ~3–6 seconds), with static estimates off by **4–7 seconds**.
 
+**Aggregate Metrics Across All Sessions (Current Estimation):**
+
+| Metric | Value |
+|---|---|
+| Mean Absolute Error | 1.493 seconds |
+| Mean Squared Error | 9.026 |
+| Mean Percentage Relative Error | -228.26% (over-prediction) |
+
 ---
 
 ## Baseline ML Model: Random Forest
@@ -68,6 +76,14 @@ Feature engineering for the RF model is implemented in `rf_feature_pipeline.py`.
 **Training configuration:** 36 sessions, lag window of 10 invocations.
 
 **Results:** The highest errors were still reported for `pyhpc-eos`, `pyhpc-isoneural`, and `torch_rnn` functions — but predictions improved dramatically, now off by only **0.5–2.5 seconds** (compared to 4–7 seconds for the static baseline).
+
+**Aggregate Metrics Across All Sessions (Random Forest Baseline):**
+
+| Metric | Value |
+|---|---|
+| Mean Absolute Error | 0.519 seconds |
+| Mean Squared Error | 2.159 |
+| Mean Percentage Relative Error | -17.56% (over-prediction, less spread out) |
 
 ### Feature Importances (RF Model)
 
