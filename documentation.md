@@ -1,5 +1,21 @@
 # GPU Latency Prediction for Ilúvatar FaaS
 
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Features Affecting GPU Latency](#features-affecting-gpu-latency)
+3. [Data & Processing](#data--processing)
+4. [Current Estimation: Baseline Error Analysis](#current-estimation-baseline-error-analysis)
+5. [Baseline ML Model: Random Forest](#baseline-ml-model-random-forest)
+6. [S4: Structured State Space Sequence Modeling](#s4-structured-state-space-sequence-modeling)
+   - [Introduction to S4](#introduction-to-s4)
+   - [Why S4 Is a Good Fit for FaaS Latency Prediction](#why-s4-is-a-good-fit-for-faas-latency-prediction)
+   - [Session-Based Training Design](#session-based-training-design)
+   - [What the State Vector Memorizes](#what-the-state-vector-memorizes)
+   - [Model Architecture (Global Model)](#model-architecture-global-model)
+7. [Next Steps](#next-steps)
+
+---
+
 ## Introduction
 
 The controller in Ilúvatar's cloud service receives FaaS requests at a high rate (anywhere from 0.2–1.3 seconds between arrivals) and routes each request to either a GPU or a CPU. To decide on the routing, the controller estimates the end-to-end latency (`e2etime`) for both compute paths.
