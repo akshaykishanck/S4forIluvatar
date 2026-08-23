@@ -19,20 +19,40 @@ def calculate_fqdn_iat(df):
     return last_time[['tid', 'iat_fqdn']].drop_duplicates()
 
 def fill_realtime_running_funcs(df):
+    df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df = df.sort_values('timestamp').reset_index(drop=True)
-    df['delta'] = 0
-    df.loc[df['message'] == 'Handling invocation request', 'delta'] = 1
-    df.loc[df['message'] == 'Invocation complete', 'delta'] = -1
     
-    df['cumsum_delta'] = df['delta'].cumsum()
-    df['baseline'] = df['num_running_funcs'] - df['cumsum_delta']
-    df['baseline'] = df['baseline'].ffill().bfill()
-    df['num_running_funcs_filled'] = df['cumsum_delta'] + df['baseline']
+    starts = df[df['message'] == 'Item starting to execute'].copy()
+    if 'remove_time' in starts.columns:
+        starts['remove_time'] = pd.to_datetime(starts['remove_time'])
+    else:
+        starts['remove_time'] = starts['timestamp']
+    starts = starts[['tid', 'remove_time']].dropna(subset=['tid', 'remove_time']).drop_duplicates(subset=['tid'])
     
-    df = df[df['message']=='Handling invocation request'][['tid', 'num_running_funcs_filled']].reset_index(drop=True)
-    df['num_running_funcs_filled'] = df['num_running_funcs_filled'] - 1
-    return df
+    # Extract end times from 'Invocation complete'
+    ends = df[df['message'] == 'Invocation complete'][['tid', 'timestamp']].copy()
+    ends = ends.rename(columns={'timestamp': 'complete_time'}).dropna(subset=['tid']).drop_duplicates(subset=['tid'])
+    
+    # Build intervals
+    intervals = pd.merge(starts, ends, on='tid', how='inner')
+    
+    # Get invocation timestamps
+    invocations = df[df['message'] == 'Handling invocation request'][['tid', 'timestamp']].copy()
+    
+    if len(intervals) == 0 or len(invocations) == 0:
+        invocations['num_running_funcs_filled'] = 0
+        return invocations[['tid', 'num_running_funcs_filled']].reset_index(drop=True)
+        
+    # Vectorized count of active intervals per invocation request
+    remove_arr = intervals['remove_time'].values[:, None]
+    ends_arr = intervals['complete_time'].values[:, None]
+    ts_arr = invocations['timestamp'].values[None, :]
+    
+    active_mask = (remove_arr <= ts_arr) & (ends_arr >= ts_arr)
+    counts = active_mask.sum(axis=0)
+    
+    invocations['num_running_funcs_filled'] = counts
+    return invocations[['tid', 'num_running_funcs_filled']].reset_index(drop=True)
 
 def get_queue_features_at_invocations(df):
     """
@@ -131,7 +151,7 @@ def add_benchmark_features(df, json_path='worker_function_benchmarks.json'):
     benchmark_features = []
     for base_func, info in data.items():
         try:
-            gpu_data = info.get('resource_data', {}).get('gpu', {})
+            gpu_data = info.get('resource_data', {}).get('GPU', {})
             warm_mean = np.mean(gpu_data.get('warm_results_sec', [0]))
             cold_mean = np.mean(gpu_data.get('cold_results_sec', [0]))
         except Exception:
@@ -145,8 +165,8 @@ def add_benchmark_features(df, json_path='worker_function_benchmarks.json'):
         
     bench_df = pd.DataFrame(benchmark_features)
     
-    if 'base_function' not in df.columns:
-        df['base_function'] = df['fqdn'].str.extract(r'^([^0-9]+)')[0].str.strip('-')
+    df['base_function'] = df['fqdn'].str.extract(r'^(.*?)(?=-\d)')[0]
+
         
     # Merge without dropping anything
     df = df.merge(bench_df, on='base_function', how='left')
@@ -166,9 +186,13 @@ def generate_target_features(raw_df):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df.loc[df['tid'].isna(), 'tid'] = df.get('span.tid', pd.NA)
     
-    # Identify explicit cold starts logged by containermanager
-    if 'message' in df.columns:
-        cold_tids = df[df['message'] == 'Container cold start completed']['tid'].dropna().unique()
+    # Identify cold starts using the is_warm_gpu flag from 'Landlord Credit' log entries.
+    # is_cold_start = 1 when is_warm_gpu is False (i.e. the GPU container was not warm).
+    if 'message' in df.columns and 'is_warm_gpu' in df.columns:
+        landlord_credit = df[df['message'] == 'Landlord Credit'][['tid', 'is_warm_gpu']].dropna(subset=['tid'])
+        landlord_credit = landlord_credit.drop_duplicates(subset=['tid'], keep='first').copy()
+        cold_tids = landlord_credit[landlord_credit['is_warm_gpu']==False]['tid'].unique()
+        print("Number of cold tids ", len(cold_tids))
     else:
         cold_tids = []
     
@@ -192,7 +216,16 @@ def generate_target_features(raw_df):
     final_features = base_features.merge(iat_fqdn_feats, on=['tid'])
     
     # 4. Extract Realtime Running Funcs (Contention)
-    num_req_data = df[((df['num_running_funcs'].notna()) | (df['e2etime'].notna())) | ((df['message']=='Item starting to execute') | (df['message']=='Handling invocation request'))][['timestamp', 'message', 'fqdn', 'tid','num_running_funcs','e2etime']]
+    num_req_cols = ['timestamp', 'message', 'fqdn', 'tid', 'num_running_funcs', 'e2etime']
+    if 'remove_time' in df.columns:
+        num_req_cols.append('remove_time')
+    num_req_data = df[
+        (df['num_running_funcs'].notna()) |
+        (df['e2etime'].notna()) |
+        (df['message'] == 'Item starting to execute') |
+        (df['message'] == 'Handling invocation request') |
+        (df['message'] == 'Invocation complete')          # needed so delta=-1 events reach fill_realtime_running_funcs
+    ][[c for c in num_req_cols if c in df.columns]]
     running_funcs = fill_realtime_running_funcs(num_req_data)
     final_features = final_features.merge(running_funcs, on=['tid'])
 
