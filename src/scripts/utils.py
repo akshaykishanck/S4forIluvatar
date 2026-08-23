@@ -48,3 +48,12 @@ def get_workerlog_landlord_paths(path_to_log):
         if "landlord" in a.lower() and "precleanup" not in a.lower():
             workerlog_landlord_paths.append(a)
     return workerlog_landlord_paths
+
+def get_workerlog_all_paths(path_to_log):
+    # "." searches starting from your current folder
+    workerlog_all_paths = []
+    for path in Path(path_to_log).rglob("worker1.log"):
+        a = str(path)
+        if "precleanup" not in a.lower() and "alwayscpu" not in a.lower():
+            workerlog_all_paths.append(a)
+    return workerlog_all_paths
