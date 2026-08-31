@@ -177,6 +177,20 @@ def add_benchmark_features(df, json_path='worker_function_benchmarks.json'):
     
     return df
 
+def get_cold_gpu_tids(df):
+    # Identify cold starts using the is_warm_gpu flag from 'Landlord Credit' log entries.
+    # is_cold_start = 1 when is_warm_gpu is False (i.e. the GPU container was not warm).
+    if 'message' in df.columns and 'is_warm_gpu' in df.columns:
+        landlord_credit = df[df['message'] == 'Landlord Credit'][['tid', 'is_warm_gpu']].dropna(subset=['tid'])
+        landlord_credit = landlord_credit.drop_duplicates(subset=['tid'], keep='first').copy()
+        cold_tids = landlord_credit[landlord_credit['is_warm_gpu']==False]['tid'].unique()
+        print("Number of cold tids ", len(cold_tids))
+    elif 'message' in df.columns:
+        cold_tids = df[df['message'] == 'Container cold start completed']['tid'].dropna().unique()
+    else:
+        cold_tids = []
+    return cold_tids
+
 def generate_target_features(raw_df):
     """
     Main pipeline function that extracts ALL S4 features from the raw logs.
@@ -186,15 +200,7 @@ def generate_target_features(raw_df):
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df.loc[df['tid'].isna(), 'tid'] = df.get('span.tid', pd.NA)
     
-    # Identify cold starts using the is_warm_gpu flag from 'Landlord Credit' log entries.
-    # is_cold_start = 1 when is_warm_gpu is False (i.e. the GPU container was not warm).
-    if 'message' in df.columns and 'is_warm_gpu' in df.columns:
-        landlord_credit = df[df['message'] == 'Landlord Credit'][['tid', 'is_warm_gpu']].dropna(subset=['tid'])
-        landlord_credit = landlord_credit.drop_duplicates(subset=['tid'], keep='first').copy()
-        cold_tids = landlord_credit[landlord_credit['is_warm_gpu']==False]['tid'].unique()
-        print("Number of cold tids ", len(cold_tids))
-    else:
-        cold_tids = []
+    cold_tids = get_cold_gpu_tids(df)
     
     # Isolate GPU metrics
     gpu_tids = df[(df['fqdn'].notna()) & (df['e2etime'].notna()) & (df['compute']=='GPU')]['tid'].unique()
@@ -267,8 +273,83 @@ def generate_target_features(raw_df):
     final_features['base_function'] = final_features['fqdn'].str.extract(r'^([^0-9]+)')[0].str.strip('-')
     
     # 7. Add internal benchmark representations explicitly requested (warm and cold times)
-    final_features = add_benchmark_features(final_features, 'worker_function_benchmarks.json')
+    final_features = add_benchmark_features(final_features, '../data/raw/worker_function_benchmarks.json')
     
     final_features['is_cold_start'] = final_features['tid'].isin(cold_tids).astype(int)
     
     return final_features
+
+def get_lagged_target_queue_len(df, fqdn_series, lag):
+    """
+    Solves the moving-target issue.
+    Returns the queue length of the specific `fqdn` (from fqdn_series), 
+    but evaluated at `lag` rows *prior* in the dataset.
+    """
+    # 1. Identify all pure queue length columns 
+    q_len_cols = [c for c in df.columns if str(c).endswith('_len') and c not in ['target_queue_len', 'others_len_queue']]
+    
+    # 2. Shift the absolute state of all queues backwards by `lag` requests
+    shifted_df = df[q_len_cols].shift(lag).fillna(0)
+    
+    # 3. Vectorized coordinate mapping: 
+    # For each row, find the column index in `shifted_df` that corresponds to that row's target FQDN.
+    col_map = {col: i for i, col in enumerate(shifted_df.columns)}
+    col_indices = fqdn_series.map(lambda q: col_map.get(f"{q}_len", -1)).fillna(-1).astype(int).values
+    
+    shifted_values = shifted_df.values
+    row_indices = np.arange(len(shifted_values))
+    
+    # 4. Extract the explicit values bridging time and moving targets
+    valid_mask = col_indices != -1
+    result = np.zeros(len(shifted_values))
+    result[valid_mask] = shifted_values[row_indices[valid_mask], col_indices[valid_mask]]
+    
+    return result
+
+def add_lagged_features(df, lags=[1, 3, 5]):
+    """
+    Takes the base final_features from s4_feature_pipeline and injects lagged memory.
+    """
+    # Ensure sequential time order to calculate lag correctly
+    if 'timestamp' in df.columns:
+        df = df.sort_values('timestamp').reset_index(drop=True)
+    elif 'invocation_timestamp' in df.columns:
+        df = df.sort_values('invocation_timestamp').reset_index(drop=True)
+        
+    q_len_cols = [c for c in df.columns if str(c).endswith('_len') and c not in ['target_queue_len', 'others_len_queue']]
+    total_q_lens = df[q_len_cols].sum(axis=1)
+    
+    new_cols = {}
+    
+    print(f"Generating rolling lag features across lags {lags}...")
+    for lag in lags:
+        # 1. Target Queue Length
+        lagged_target = get_lagged_target_queue_len(df, df['fqdn'], lag)
+        new_cols[f'target_queue_len_lag_{lag}'] = lagged_target
+        
+        # 2. Others Queue Length
+        # (Total queue length at t-lag) - (Target queue length at t-lag)
+        shifted_total = total_q_lens.shift(lag).fillna(0)
+        lagged_others = shifted_total - lagged_target
+        new_cols[f'others_len_queue_lag_{lag}'] = lagged_others
+        
+        # 3. Global properties
+        if 'num_running_funcs_filled' in df.columns:
+            new_cols[f'num_running_funcs_filled_lag_{lag}'] = df['num_running_funcs_filled'].shift(lag).fillna(0)
+            
+    # Concat all new features cleanly
+    lag_df = pd.DataFrame(new_cols, index=df.index)
+    return pd.concat([df, lag_df], axis=1)
+
+def generate_rf_features(raw_df, lags=[1, 3, 5]):
+    """
+    Main pipeline entrypoint for Random Forest specific processing.
+    """
+    print("Baseline feature extraction.")
+    base_features = generate_target_features(raw_df)
+    
+    print("Enhancing features with local temporal RF lags...")
+    rf_features = add_lagged_features(base_features, lags=lags)
+    
+    print("RF Feature extraction complete!")
+    return rf_features
