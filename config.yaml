@@ -1,0 +1,34 @@
+# Master Pipeline Configuration File
+experiment_name: "landlord"
+
+paths:
+  input_path: "/Users/akshaykishan/PycharmProjects/S4forIluvatar/src/data/runs/30_min/4.0/6.0"
+  output_path: "src/data/processed/results"
+
+training:
+  policies:
+    - landlord
+    # - alwaysgpu
+    # - mice
+    # - speedup
+    # - random
+    # - greedy
+
+  features:
+    continuous:
+      iat: 0
+      target_queue_len: true
+      others_len_queue: true
+      iat_fqdn: true
+      num_running_funcs_filled: true
+      gpu_warm_results_sec: true
+      gpu_cold_results_sec: true
+    categorical:
+      is_cold_start: true
+      is_status_Active: 0
+      is_status_Inactive: 0
+      is_status_Throttled: 0
+
+  test_size: 0.2
+  random_state: 42
+  max_logs: 200

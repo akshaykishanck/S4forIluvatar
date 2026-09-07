@@ -1,0 +1,73 @@
+2026-09-07 19:04:46,605 [INFO] __main__ - Pipeline started. Config: config.yaml
+2026-09-07 19:04:46,605 [INFO] __main__ - Log file: src/logs/landlord/pipeline.log
+2026-09-07 19:04:46,605 [INFO] src.scripts.utils - ==========================================
+2026-09-07 19:04:46,605 [INFO] src.scripts.utils - STAGE 1: DISCOVERING & LOADING LOGS
+2026-09-07 19:04:46,605 [INFO] src.scripts.utils - Search directory: /Users/akshaykishan/PycharmProjects/S4forIluvatar/src/data/runs/30_min/4.0/6.0
+2026-09-07 19:04:46,605 [INFO] src.scripts.utils - Max logs limit: 200
+2026-09-07 19:04:46,605 [INFO] src.scripts.utils - ==========================================
+2026-09-07 19:04:46,658 [INFO] src.scripts.utils - Found 175 log files.
+2026-09-07 19:05:21,160 [INFO] src.scripts.utils - Loaded 2059209 total raw log records across 44 sessions.
+2026-09-07 19:05:21,564 [INFO] src.scripts.eda - ==========================================
+2026-09-07 19:05:21,565 [INFO] src.scripts.eda - STAGE 2: BASIC STATISTICS REPORTING
+2026-09-07 19:05:21,565 [INFO] src.scripts.eda - ==========================================
+2026-09-07 19:05:22,648 [INFO] src.scripts.eda - Number of Sessions (Logs): 44
+2026-09-07 19:05:22,648 [INFO] src.scripts.eda - Invocations per Session - Mean: 2686.14, Median: 2349.00, Min: 1107, Max: 6153
+2026-09-07 19:05:22,648 [INFO] src.scripts.eda - Logs/Sessions per Policy: {'landlord': 44}
+2026-09-07 19:05:22,648 [INFO] src.scripts.eda - Invocations per Policy: {'landlord': 118190}
+2026-09-07 19:05:22,648 [INFO] src.scripts.eda - Latency (e2etime) - Mean: 4.6105s, Median: 0.6763s, P95: 7.0759s, Max: 560.7973s
+2026-09-07 19:05:22,669 [INFO] __main__ - ==========================================
+2026-09-07 19:05:22,669 [INFO] __main__ - STAGE 3: FEATURE EXTRACTION PIPELINE
+2026-09-07 19:05:22,669 [INFO] __main__ - ==========================================
+2026-09-07 19:07:04,715 [INFO] src.scripts.feature_engineering - Extracting detailed queue state history... this may take a moment.
+2026-09-07 19:09:01,812 [INFO] src.scripts.feature_engineering - Feature toggles applied. Active features: ['target_queue_len', 'others_len_queue', 'iat_fqdn', 'num_running_funcs_filled', 'gpu_warm_results_sec', 'gpu_cold_results_sec', 'is_cold_start']
+2026-09-07 19:09:04,006 [INFO] __main__ - Features successfully extracted! Shape: (78534, 13)
+2026-09-07 19:09:04,006 [INFO] __main__ - Saved feature dataset to: src/data/processed/landlord/feature_data.csv
+2026-09-07 19:09:04,008 [INFO] src.scripts.eda - ==========================================
+2026-09-07 19:09:04,008 [INFO] src.scripts.eda - STAGE 4: EXPLORATORY DATA ANALYSIS (EDA)
+2026-09-07 19:09:04,008 [INFO] src.scripts.eda - ==========================================
+2026-09-07 19:09:12,530 [INFO] src.scripts.eda - Generated 3 EDA plots in src/plots/landlord/
+2026-09-07 19:09:12,530 [INFO] src.scripts.train - ==========================================
+2026-09-07 19:09:12,530 [INFO] src.scripts.train - STAGE 5: MODEL TRAINING & EVALUATION
+2026-09-07 19:09:12,530 [INFO] src.scripts.train - ==========================================
+2026-09-07 19:09:12,551 [INFO] src.scripts.train - Original Dataset Size: 78534 rows
+2026-09-07 19:09:12,563 [INFO] src.scripts.train - Policy Distribution Across Total Sessions:
+2026-09-07 19:09:12,565 [INFO] src.scripts.train - dispatch_policy
+landlord    44
+2026-09-07 19:09:12,581 [INFO] src.scripts.train - Stratified Split Complete!
+2026-09-07 19:09:12,581 [INFO] src.scripts.train - Train Sessions: 35 | Test Sessions: 9
+2026-09-07 19:09:12,585 [INFO] src.scripts.train - Train samples: 60859 | Test samples: 17675
+2026-09-07 19:09:12,585 [INFO] src.scripts.train - Features used (7): ['target_queue_len', 'others_len_queue', 'iat_fqdn', 'num_running_funcs_filled', 'gpu_warm_results_sec', 'gpu_cold_results_sec', 'is_cold_start']
+2026-09-07 19:09:24,646 [INFO] src.scripts.train - --- PERFORMANCE METRICS ---
+2026-09-07 19:09:24,647 [INFO] src.scripts.train - RF Model Test Metrics:
+2026-09-07 19:09:24,647 [INFO] src.scripts.train -  - Log R2: 0.7822
+2026-09-07 19:09:24,647 [INFO] src.scripts.train -  - MAE: 0.6911s
+2026-09-07 19:09:24,647 [INFO] src.scripts.train -  - MSE: 12.8185
+2026-09-07 19:09:24,647 [INFO] src.scripts.train -  - Mean APE: 30.77%
+2026-09-07 19:09:24,647 [INFO] src.scripts.train -  - Median APE: 11.80%
+2026-09-07 19:09:24,799 [INFO] __main__ - ==========================================
+2026-09-07 19:09:24,800 [INFO] __main__ - STAGE 6: SAVING MODEL & ERROR ARTIFACTS
+2026-09-07 19:09:24,800 [INFO] __main__ - ==========================================
+2026-09-07 19:09:24,813 [INFO] __main__ - Saved Random Forest model to: src/models/landlord/rf_model.joblib
+2026-09-07 19:09:24,954 [INFO] __main__ - Saved RF test error data to: src/data/processed/landlord/rf_test_errors.csv
+2026-09-07 19:09:24,955 [INFO] src.scripts.evaluate - ==========================================
+2026-09-07 19:09:24,955 [INFO] src.scripts.evaluate - STAGE 7: MODEL COMPARISON (RF vs CURRENT ESTIMATE)
+2026-09-07 19:09:24,955 [INFO] src.scripts.evaluate - ==========================================
+2026-09-07 19:09:34,869 [INFO] src.scripts.evaluate - Total Unified TIDs found with estimator pairs: 108423
+2026-09-07 19:09:34,869 [INFO] src.scripts.evaluate - Strictly GPU-Bound TIDs: 69360
+2026-09-07 19:09:34,871 [INFO] src.scripts.evaluate - TRUE Baseline MSE: 124.6953
+2026-09-07 19:09:34,871 [INFO] src.scripts.evaluate - TRUE Baseline MAE: 2.0134
+2026-09-07 19:09:34,871 [INFO] src.scripts.evaluate - TRUE Baseline Mean Perc. Relative Error: 219.1748%
+2026-09-07 19:09:34,871 [INFO] src.scripts.evaluate - TRUE Baseline Error StdDev: 11.1496
+2026-09-07 19:09:35,444 [INFO] src.scripts.evaluate - --- OVERALL COMPARISON ---
+2026-09-07 19:09:35,446 [INFO] src.scripts.evaluate -                            Model      MAE       MSE  meanAPE (%)  medianAPE (%)
+Current Estimate (gpu_est_total) 1.762526 31.693265   200.669598      78.639903
+             Random Forest Model 0.665918 12.470502    30.973091      11.166787
+2026-09-07 19:09:35,446 [INFO] src.scripts.evaluate - Saved performance comparison CSV to: src/reports/landlord/model_comparison.csv
+2026-09-07 19:09:35,448 [INFO] __main__ - ==========================================
+2026-09-07 19:09:35,448 [INFO] __main__ - STAGE 8: GENERATING RUN REPORT
+2026-09-07 19:09:35,448 [INFO] __main__ - ==========================================
+2026-09-07 19:09:35,454 [INFO] __main__ - Run report successfully created at: src/reports/landlord/run_report.md
+2026-09-07 19:09:35,454 [INFO] __main__ - ==========================================
+2026-09-07 19:09:35,454 [INFO] __main__ - PIPELINE COMPLETED SUCCESSFULLY IN 288.85 SECONDS
+2026-09-07 19:09:35,454 [INFO] __main__ - Run Report: src/reports/landlord/run_report.md
+2026-09-07 19:09:35,454 [INFO] __main__ - ==========================================
